@@ -1,0 +1,59 @@
+# Builds an extensions-only image from duckflight's own Dockerfile (remote git
+# context, `extensions` target) — no Dockerfile in this repo, so the download
+# logic can never drift from what the server image does.
+#
+# Trigger: push a tag shaped `v<duckflight-tag>-<set>.<n>`, e.g.
+# `v0.2.0-gsheets.1`. The part before the first `-` names the duckflight tag
+# the build pins (and the DuckDB version the extension files must match — see
+# README.md); the image is published as ghcr.io/fairtier/duckdb-extensions
+# with the tag minus its leading `v`.
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+env:
+  # The extension set every FairTier box needs: the server's core trio (the
+  # emptyDir mount shadows the baked set, so it must be complete) plus the
+  # community extensions enabled for the fleet.
+  CORE_EXTENSIONS: "iceberg avro httpfs"
+  COMMUNITY_EXTENSIONS: "gsheets"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Derive versions from the tag
+        id: v
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"                 # 0.2.0-gsheets.1
+          DUCKFLIGHT_TAG="v${TAG%%-*}"               # v0.2.0
+          echo "image_tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "duckflight_tag=${DUCKFLIGHT_TAG}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          # Remote git context pinned to the duckflight tag: the same
+          # Dockerfile the server image is built from.
+          context: "https://github.com/fairtier/duckflight.git#${{ steps.v.outputs.duckflight_tag }}"
+          target: extensions
+          platforms: linux/amd64,linux/arm64
+          push: true
+          build-args: |
+            CORE_EXTENSIONS=${{ env.CORE_EXTENSIONS }}
+            COMMUNITY_EXTENSIONS=${{ env.COMMUNITY_EXTENSIONS }}
+          tags: ghcr.io/fairtier/duckdb-extensions:${{ steps.v.outputs.image_tag }}
