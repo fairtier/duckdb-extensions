@@ -15,10 +15,12 @@ on:
 
 env:
   # The extension set every FairTier box needs: the server's core trio (the
-  # emptyDir mount shadows the baked set, so it must be complete) plus the
-  # community extensions enabled for the fleet.
+  # emptyDir mount shadows the baked set, so it must be complete). Community
+  # extensions are empty since query-time federation was retired (2026-08-27,
+  # gsheets left with it) — pipeline extensions live in the dlt-worker image,
+  # not here.
   CORE_EXTENSIONS: "iceberg avro httpfs"
-  COMMUNITY_EXTENSIONS: "gsheets"
+  COMMUNITY_EXTENSIONS: ""
 
 jobs:
   build:

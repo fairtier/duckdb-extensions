@@ -19,7 +19,7 @@ its `extensions` stage, with the extension lists as build args:
 docker buildx build \
   --target extensions \
   --build-arg CORE_EXTENSIONS="iceberg avro httpfs" \
-  --build-arg COMMUNITY_EXTENSIONS="gsheets" \
+  --build-arg COMMUNITY_EXTENSIONS="" \
   https://github.com/fairtier/duckflight.git#v0.2.0
 ```
 
@@ -39,7 +39,8 @@ when the extension list is unchanged.
 ## Supply chain
 
 Extensions are fetched at build time from `extensions.duckdb.org` (core) and
-`community-extensions.duckdb.org` (community, third-party — `gsheets` is
-maintained by Evidence), then baked and pinned by image digest. Boxes never
+`community-extensions.duckdb.org` (community, third-party; the set is empty
+since query-time federation was retired 2026-08-27), then baked and pinned by
+image digest. Boxes never
 install extensions at runtime; DuckFlight refuses client-issued
 `INSTALL`/`LOAD` (`REJECT_CLIENT_EXTENSIONS`).
