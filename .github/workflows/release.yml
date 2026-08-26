@@ -14,12 +14,14 @@ on:
     tags: ["v*"]
 
 env:
-  # The extension set every FairTier box needs: the server's core trio (the
-  # emptyDir mount shadows the baked set, so it must be complete). Community
-  # extensions are empty since query-time federation was retired (2026-08-27,
-  # gsheets left with it) — pipeline extensions live in the dlt-worker image,
-  # not here.
-  CORE_EXTENSIONS: "iceberg avro httpfs"
+  # EXTRAS ONLY. The mandatory set (iceberg, avro, httpfs) is baked into the
+  # duckflight server image and seeded by the chart's first initContainer
+  # (helm/v0.0.7 union semantics) — repeating it here would just bloat the
+  # image. Both lists are empty since query-time federation was retired
+  # (2026-08-27, gsheets left with it); pipeline extensions live in the
+  # dlt-worker image, not here. Fill a list and push a tag when a box needs
+  # an extra engine extension again.
+  CORE_EXTENSIONS: ""
   COMMUNITY_EXTENSIONS: ""
 
 jobs:
